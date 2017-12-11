@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Gather system stats
+CPUTIME=$(<%= @cputime %>)
+CPUCORES=$(<%= @cpucores %>)
+LOADAVG=$(<%= @loadavg %>)
+FREEMEM=$(<%= @freemem %>)
+REALMEM=$(<%= @realmem %>)
+CACHEMEM=$(<%= @cachemem %>)
+SWAPMEM="$(<%= @swapmem %>)"
+CPUAVG=`python -c "print '{0:.2}'.format(float($CPUTIME/$CPUCORES))"`
+
+# Write the head to the temp file
+if [ -f <%= @templates %>/motd.head ] ; then
+cat <%= @templates %>/motd.head > <%= @templates %>/motd.tmp
+else
+echo > <%= @templates %>/motd.tmp
+fi
+
+# Write any notifications (not using right now)
+# if [ -f <%= @templates %>/motd.custom ] ; then
+#   echo >> <%= @templates %>/motd.tmp
+#   cat <%= @templates %>/motd.custom >> <%= @templates %>/motd.tmp
+# fi
+
+# Add a new line
+echo >> <%= @templates %>/motd.tmp
+
+# Add the system usage information
+cat > <%= @templates %>/motd.system << EOF
+   CORES:   $CPUCORES
+   MEMORY:  $FREEMEM MB
+   SUMMARY: (collected `date`)
+    * CPU Usage (total average) = ${CPUAVG}%
+    * Memory free (real)        = ${REALMEM} MB
+    * Memory free (cache)       = ${CACHEMEM} MB
+    * Swap in use               = ${SWAPMEM} MB
+    * Load average              = ${LOADAVG}
+EOF
+
+# Write the system info to the temp file
+if [ -f <%= @templates %>/motd.system ] ; then
+cat <%= @templates %>/motd.system >> <%= @templates %>/motd.tmp
+else
+echo > <%= @templates %>/motd.tmp
+fi
+
+# Write the tail to the temp file
+if [ -f <%= @templates %>/motd.tail ] ; then
+cat <%= @templates %>/motd.tail >> <%= @templates %>/motd.tmp
+else
+echo > <%= @templates %>/motd.tmp
+fi
+
+# replace the file
+cp <%= @templates %>/motd.tmp /etc/motd
+
